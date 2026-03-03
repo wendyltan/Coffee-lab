@@ -1,0 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+    /* iOS 安全区：避免内容被刘海、圆角、底部横条遮挡 */
+    padding-top: env(safe-area-inset-top, 0);
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  body {
+    @apply bg-cream-200 text-coffee-800 font-sans min-h-screen;
+  }
+  /* 安全区域工具类，适配 iOS 刘海与底部横条 */
+  .pt-safe { padding-top: env(safe-area-inset-top, 0); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0); }
+  .pl-safe { padding-left: env(safe-area-inset-left, 0); }
+  .pr-safe { padding-right: env(safe-area-inset-right, 0); }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-coffee-600 text-cream-100 px-5 py-3 rounded-2xl font-medium
+           shadow-soft active:scale-[0.98] transition-transform;
+  }
+  .btn-secondary {
+    @apply bg-cream-300 text-coffee-700 px-5 py-3 rounded-2xl font-medium
+           border border-coffee-500/20 active:scale-[0.98] transition-transform;
+  }
+  .card {
+    @apply bg-cream-100/90 rounded-3xl p-4 shadow-card border border-cream-400/50;
+  }
+  .input-field {
+    @apply w-full rounded-2xl border border-cream-400 bg-cream-50 px-4 py-3
+           text-coffee-800 placeholder-stone-400 focus:outline-none focus:ring-2
+           focus:ring-sage-400/40 focus:border-sage-400;
+  }
+}
+
+/* 调配页：新加一层时的轻微高亮，不喧宾夺主 */
+@keyframes recipe-layer-in {
+  0% { opacity: 0.7; filter: brightness(1.15); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+.animate-recipe-layer-in {
+  animation: recipe-layer-in 0.4s ease-out forwards;
+}

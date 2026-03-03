@@ -1,0 +1,8 @@
+{
+  "appId": "com.coffeelab.app",
+  "appName": "CoffeLab",
+  "webDir": "dist",
+  "ios": {
+    "contentInset": "automatic"
+  }
+}
