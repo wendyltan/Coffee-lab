@@ -79,7 +79,7 @@ export default function DayLogList({ logs, dateLabel, emptyMessage }) {
     <div className="space-y-3">
       <h3 className="text-sm font-medium text-stone-500 px-1">{dateLabel}</h3>
       {logs.map((log) => (
-        <div key={log.id} className="relative overflow-hidden rounded-3xl">
+        <div key={log.id} className="relative overflow-hidden rounded-3xl bg-cream-100">
           {/* 删除条：左滑后最右侧露出 */}
           <button
             type="button"
@@ -90,17 +90,22 @@ export default function DayLogList({ logs, dateLabel, emptyMessage }) {
             <Trash size={22} weight="bold" />
           </button>
 
-          {/* 精选条：紧贴删除条左侧，心形图标，颜色与删除区分 */}
+          {/* 精选条：紧贴删除条左侧，点击后自动收回 */}
           <button
             type="button"
-            onClick={() => toggleFavoriteLog(log.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleFavoriteLog(log.id)
+              setSwipedId(null)
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
             className="absolute inset-y-0 right-[72px] w-[72px] flex items-center justify-center bg-coffee-500/90 text-cream-100 z-0"
             aria-label={log.isFavorite ? '取消精选' : '精选'}
           >
             <Heart size={22} weight={log.isFavorite ? 'fill' : 'regular'} />
           </button>
 
-          {/* 卡片：左滑时露出精选与删除 */}
+          {/* 卡片：左滑后无间隙贴精选条 */}
           <button
             type="button"
             onClick={() => {
@@ -114,8 +119,15 @@ export default function DayLogList({ logs, dateLabel, emptyMessage }) {
             onPointerMove={(e) => handlePointerMove(log.id, e)}
             onPointerUp={handlePointerEnd}
             onPointerCancel={handlePointerEnd}
-            style={{ touchAction: 'pan-y', transform: swipedId === log.id ? `translateX(-${SWIPE_REVEAL_WIDTH}px)` : 'translateX(0)' }}
-            className="relative z-10 w-full text-left flex items-center gap-3 py-3 px-4 bg-cream-100 border border-cream-400/50 shadow-card active:scale-[0.99] transition-transform duration-200 ease-out rounded-3xl"
+            style={{
+              touchAction: 'pan-y',
+              transform: swipedId === log.id ? `translateX(-${SWIPE_REVEAL_WIDTH}px)` : 'translateX(0)',
+              boxShadow:
+                swipedId === log.id
+                  ? '0 4px 20px rgba(92, 83, 70, 0.06)'
+                  : '0 4px 20px rgba(92, 83, 70, 0.06), 6px 0 0 0 #FAF7F2, 8px 8px 0 0 #FAF7F2, 8px -8px 0 0 #FAF7F2',
+            }}
+            className="relative z-10 w-full text-left flex items-center gap-3 py-3 px-4 bg-cream-100 border border-cream-400/50 active:scale-[0.99] transition-transform duration-200 ease-out rounded-3xl"
           >
             <div className="relative w-10 h-10 rounded-2xl bg-coffee-500/15 flex items-center justify-center flex-shrink-0 overflow-visible">
               <Coffee className="text-coffee-600" size={20} weight="fill" />
