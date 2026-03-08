@@ -155,7 +155,7 @@ export default function SettingsPage() {
             : '专注冲煮记录与复盘，帮助你更稳定地做出好喝咖啡。'}
         </p>
         <p className="text-sm text-stone-500 leading-6">
-          {t('settings.contact', '联系邮箱')}: support@coffeelab.app
+          {t('settings.contact', '联系邮箱')}: youlinai233@gmail.com
           <br />
           {t('settings.version', '版本')}: 1.0.0
         </p>

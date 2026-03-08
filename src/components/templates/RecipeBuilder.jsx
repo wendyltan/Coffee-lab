@@ -442,7 +442,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
         </div>
       )}
 
-      <div className="px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)] border-t border-cream-400/60 bg-cream-200 flex gap-3 justify-end shrink-0">
+      <div className="px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+5.25rem)] border-t border-cream-400/60 bg-cream-200 flex gap-3 justify-end shrink-0">
         <button
           type="button"
           onClick={undoLast}
