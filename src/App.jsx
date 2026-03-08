@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { House, Heart, SquaresFour, ChartBar, GearSix } from '@phosphor-icons/react'
 import HomePage from './pages/HomePage'
@@ -18,7 +18,10 @@ export default function App() {
   const location = useLocation()
   const navigate = useNavigate()
   const { t, language } = useApp()
+  const [keyboardOpenByFocus, setKeyboardOpenByFocus] = useState(false)
+  const [keyboardOpenByViewport, setKeyboardOpenByViewport] = useState(false)
   const isCompare = location.pathname === '/compare'
+  const isKeyboardOpen = keyboardOpenByFocus || keyboardOpenByViewport
   const navItems = [
     { path: '/', icon: House, label: t('nav.home', '首页') },
     { path: '/favorites', icon: Heart, label: t('nav.favorites', '精选冲煮') },
@@ -56,8 +59,47 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const isEditable = (el) => {
+      if (!el || !(el instanceof HTMLElement)) return false
+      if (el.isContentEditable) return true
+      const tag = el.tagName
+      if (tag === 'TEXTAREA') return true
+      if (tag !== 'INPUT') return false
+      const type = (el.getAttribute('type') || 'text').toLowerCase()
+      return !['button', 'checkbox', 'radio', 'range', 'submit', 'reset', 'file', 'color'].includes(type)
+    }
+
+    const onFocusIn = (e) => {
+      if (isEditable(e.target)) setKeyboardOpenByFocus(true)
+    }
+    const onFocusOut = () => {
+      setTimeout(() => {
+        setKeyboardOpenByFocus(isEditable(document.activeElement))
+      }, 0)
+    }
+
+    const vv = window.visualViewport
+    const onViewportResize = () => {
+      if (!vv) return
+      // iOS keyboard typically shrinks visual viewport significantly.
+      setKeyboardOpenByViewport(vv.height < window.innerHeight * 0.82)
+    }
+
+    window.addEventListener('focusin', onFocusIn)
+    window.addEventListener('focusout', onFocusOut)
+    vv?.addEventListener('resize', onViewportResize)
+    onViewportResize()
+
+    return () => {
+      window.removeEventListener('focusin', onFocusIn)
+      window.removeEventListener('focusout', onFocusOut)
+      vv?.removeEventListener('resize', onViewportResize)
+    }
+  }, [])
+
   return (
-    <div className="h-[100dvh] bg-cream-200 overflow-hidden">
+    <div className="h-[100dvh] bg-cream-200 overflow-hidden flex flex-col">
       <Layout showNav={!isCompare}>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -73,9 +115,9 @@ export default function App() {
         </Routes>
       </Layout>
 
-      {!isCompare && (
-        <nav className="fixed bottom-0 left-0 right-0 pb-safe z-50">
-          <div className="max-w-lg mx-auto px-3 pb-2">
+      {!isCompare && !isKeyboardOpen && (
+        <nav className="relative z-40 shrink-0">
+          <div className="max-w-lg mx-auto px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
             <div className="liquid-nav relative h-14 rounded-3xl border border-white/55 bg-cream-100/55 backdrop-blur-xl shadow-soft overflow-hidden">
               <span
                 className="absolute top-1 bottom-1 rounded-2xl liquid-nav-indicator transition-transform duration-300 ease-out"
@@ -86,25 +128,25 @@ export default function App() {
                 }}
               />
               <div className="relative z-10 flex justify-around items-center h-14">
-            {navItems.map(({ path, icon: Icon, label }, idx) => {
-              const active = idx === activeIndex
-              return (
-                <button
-                  key={path}
-                  onClick={() => {
-                    if (!active) triggerHaptic('light')
-                    navigate(path)
-                  }}
-                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-colors relative ${
-                    active ? 'text-coffee-700' : 'text-stone-500'
-                  }`}
-                  aria-label={label}
-                >
-                  <Icon size={24} weight={active ? 'fill' : 'regular'} />
-                  <span className="text-xs font-medium">{label}</span>
-                </button>
-              )
-            })}
+                {navItems.map(({ path, icon: Icon, label }, idx) => {
+                  const active = idx === activeIndex
+                  return (
+                    <button
+                      key={path}
+                      onClick={() => {
+                        if (!active) triggerHaptic('light')
+                        navigate(path)
+                      }}
+                      className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-colors relative ${
+                        active ? 'text-coffee-700' : 'text-stone-500'
+                      }`}
+                      aria-label={label}
+                    >
+                      <Icon size={24} weight={active ? 'fill' : 'regular'} />
+                      <span className="text-xs font-medium">{label}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>

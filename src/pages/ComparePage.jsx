@@ -16,7 +16,7 @@ export default function ComparePage() {
 
   return (
     <div className="min-h-screen bg-cream-200">
-      <header className="sticky top-safe z-10 bg-cream-200/95 backdrop-blur border-b border-cream-400/50 px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-cream-200/95 backdrop-blur border-b border-cream-400/50 px-4 py-3 flex items-center justify-between">
         <button
           type="button"
           onClick={() => navigate('/stats')}

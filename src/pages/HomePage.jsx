@@ -12,7 +12,7 @@ export default function HomePage() {
   const dayLogs = logsByDate[todayKey] || []
 
   return (
-    <div className="p-4 pb-6">
+    <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)]">
       <header className="mb-6">
         <div className="flex items-center justify-between">
           <div>

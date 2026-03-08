@@ -6,8 +6,8 @@ import { useApp } from '../context/AppContext'
 export default function LogPage() {
   const { t } = useApp()
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-safe z-10 bg-cream-200/90 backdrop-blur border-b border-cream-400/50 px-4 py-3 flex items-center gap-3">
+    <div>
+      <header className="bg-cream-200/90 backdrop-blur border-b border-cream-400/50 px-4 py-3 flex items-center gap-3">
         <Link
           to="/"
           className="p-2 rounded-xl hover:bg-cream-300 transition-colors text-coffee-700"

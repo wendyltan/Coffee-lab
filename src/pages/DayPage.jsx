@@ -25,7 +25,7 @@ export default function DayPage() {
   const dateText = language === 'en' ? formatDisplayDateEn(date) : formatDisplayDate(date)
 
   return (
-    <div className="p-4 pb-6">
+    <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)]">
       <header className="flex items-center justify-between mb-4">
         <button
           type="button"

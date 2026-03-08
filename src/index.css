@@ -6,18 +6,25 @@
   html {
     @apply antialiased;
     height: 100%;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     background-color: #F5F0E8;
   }
   body {
     @apply bg-cream-200 text-coffee-800 font-sans;
     height: 100%;
+    width: 100%;
     overscroll-behavior-y: none;
     background-color: #F5F0E8;
     overflow: hidden;
+    overflow-x: hidden;
   }
   #root {
     height: 100%;
+    width: 100%;
     background-color: #F5F0E8;
+    overflow-x: hidden;
   }
   /* 安全区域工具类，适配 iOS 刘海与底部横条 */
   .pt-safe { padding-top: env(safe-area-inset-top, 0); }
@@ -93,4 +100,5 @@
 .app-scroll {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
+  overflow-x: hidden;
 }

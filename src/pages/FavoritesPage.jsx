@@ -11,7 +11,7 @@ export default function FavoritesPage() {
   }, [logs])
 
   return (
-    <div className="p-4 pb-6">
+    <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)]">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-coffee-800">{t('page.favoritesTitle', '精选冲煮')}</h1>
         <p className="text-stone-500 text-sm mt-1">{t('page.favoritesDesc', '你收藏的冲煮记录，左滑可取消精选')}</p>

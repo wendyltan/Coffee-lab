@@ -128,8 +128,8 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
   }, [list])
 
   return (
-    <div className="fixed inset-0 z-[80] flex flex-col bg-cream-200 overflow-hidden">
-      <header className="flex items-center justify-between p-4 border-b border-cream-400/50">
+    <div className="fixed inset-0 z-[200] isolate flex flex-col bg-cream-200 overflow-hidden">
+      <header className="flex items-center justify-between px-4 py-3 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] border-b border-cream-400/50">
         <span className="font-semibold text-coffee-800">{language === 'en' ? 'Recipe Builder' : '配方说明 · 用量杯调配'}</span>
         <button
           type="button"
@@ -442,7 +442,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
         </div>
       )}
 
-      <div className="p-4 border-t border-cream-400/60 bg-cream-200 flex gap-3 justify-end shrink-0">
+      <div className="px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)] border-t border-cream-400/60 bg-cream-200 flex gap-3 justify-end shrink-0">
         <button
           type="button"
           onClick={undoLast}

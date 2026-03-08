@@ -42,7 +42,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 pb-6">
+    <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)]">
       <header className="mb-5">
         <h1 className="text-2xl font-bold text-coffee-800 flex items-center gap-2">
           <Gear size={28} weight="duotone" />
