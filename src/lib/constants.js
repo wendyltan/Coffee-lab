@@ -31,10 +31,20 @@ export const RECIPE_INGREDIENT_PRESETS = [
   { id: 'ice', name: '冰块', color: '#CDE7F5', emoji: '🧊' },
 ]
 
+// 豆子最佳赏味期默认阈值（按烘焙度，单位：周）
+export const DEFAULT_BEAN_BEST_WINDOW_WEEKS = {
+  light: 8,
+  medium: 6,
+  dark: 4,
+}
+
 // LocalStorage keys
 export const STORAGE_KEYS = {
   LOGS: 'coffeelog_logs',
   BEANS: 'coffeelog_beans',
   EQUIPMENT: 'coffeelog_equipment',
   RECIPES: 'coffeelog_recipes',
+  LANGUAGE: 'coffeelog_language',
+  SUBSCRIPTION: 'coffeelog_subscription',
+  BEAN_FRESHNESS_SETTINGS: 'coffeelog_bean_freshness_settings',
 }

@@ -10,7 +10,7 @@ const defaultForm = { name: '', ingredients: [], extraAdditions: '', serveType: 
 const IcedIcon = getIngredientIcon('ice')
 
 export default function RecipeList({ items }) {
-  const { addRecipe, updateRecipe, deleteRecipe } = useApp()
+  const { addRecipe, updateRecipe, deleteRecipe, language } = useApp()
   const [editingId, setEditingId] = useState(null)
   const [isAdding, setIsAdding] = useState(false)
   const [form, setForm] = useState(defaultForm)
@@ -73,14 +73,16 @@ export default function RecipeList({ items }) {
           if (i.isIce) {
             const frac = i.fraction ?? 0.7
             const label =
-              frac >= 1 ? '满杯' : frac >= 0.9 ? '九分满' : frac >= 0.8 ? '八分满' : '七分满'
+                language === 'en'
+                  ? frac >= 1 ? 'full cup' : frac >= 0.9 ? '90%' : frac >= 0.8 ? '80%' : '70%'
+                  : frac >= 1 ? '满杯' : frac >= 0.9 ? '九分满' : frac >= 0.8 ? '八分满' : '七分满'
             return `${i.name}${label}`
           }
           return `${i.name}${i.ml}ml`
         })
         .join(' + ')
     }
-    return r.detail || '—'
+    return r.detail || (language === 'en' ? '-' : '—')
   }
 
   return (
@@ -88,7 +90,7 @@ export default function RecipeList({ items }) {
       <div className="flex justify-end">
         <button type="button" onClick={openAdd} className="btn-secondary flex items-center gap-2">
           <Plus size={18} />
-          添加配方
+          {language === 'en' ? 'Add Recipe' : '添加配方'}
         </button>
       </div>
 
@@ -98,12 +100,12 @@ export default function RecipeList({ items }) {
             <input
               type="text"
               className="input-field"
-              placeholder="配方名称（如：拿铁、橙C美式）"
+              placeholder={language === 'en' ? 'Recipe name (e.g. Latte)' : '配方名称（如：拿铁、橙C美式）'}
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
             <div>
-              <label className="block text-sm text-stone-500 mb-1">饮品类型</label>
+              <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Drink type' : '饮品类型'}</label>
               <div className="inline-flex rounded-2xl bg-cream-300 p-1">
                 <button
                   type="button"
@@ -114,7 +116,7 @@ export default function RecipeList({ items }) {
                       : 'text-stone-500'
                   }`}
                 >
-                  <Flame size={16} weight="duotone" /> 热饮
+                  <Flame size={16} weight="duotone" /> {language === 'en' ? 'Hot' : '热饮'}
                 </button>
                 <button
                   type="button"
@@ -125,42 +127,42 @@ export default function RecipeList({ items }) {
                       : 'text-stone-500'
                   }`}
                 >
-                  <IcedIcon size={16} weight="duotone" /> 冰饮
+                  <IcedIcon size={16} weight="duotone" /> {language === 'en' ? 'Iced' : '冰饮'}
                 </button>
               </div>
             </div>
           </div>
           <div>
-            <label className="block text-sm text-stone-500 mb-1">配方说明（用量杯调配）</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Recipe detail (cup builder)' : '配方说明（用量杯调配）'}</label>
             <button
               type="button"
               onClick={() => setShowBuilder(true)}
               className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border-2 border-dashed border-sage-400/60 bg-sage-300/20 text-coffee-700 font-medium hover:bg-sage-300/30 transition-colors"
             >
               <Wine size={22} />
-              点击配置配料与用量
+              {language === 'en' ? 'Configure ingredients and amount' : '点击配置配料与用量'}
             </button>
             {form.ingredients.length > 0 && (
               <p className="text-sm text-stone-500 mt-2">
-                已添加：{form.ingredients.map((i) => `${i.name}${i.ml}ml`).join(' + ')}
+                {language === 'en' ? 'Added: ' : '已添加：'}{form.ingredients.map((i) => `${i.name}${i.ml}ml`).join(' + ')}
               </p>
             )}
           </div>
           <div>
-            <label className="block text-sm text-stone-500 mb-1">制作流程（可选）</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Steps (optional)' : '制作流程（可选）'}</label>
             <textarea
               className="input-field min-h-[72px] resize-y"
-              placeholder="例如：1) 杯中加冰块；2) 倒入橙汁；3) 缓慢倒入咖啡液..."
+              placeholder={language === 'en' ? 'e.g. 1) Add ice 2) Pour orange juice 3) Slowly pour coffee' : '例如：1) 杯中加冰块；2) 倒入橙汁；3) 缓慢倒入咖啡液...'}
               value={form.extraAdditions}
               onChange={(e) => setForm((f) => ({ ...f, extraAdditions: e.target.value }))}
             />
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={save} className="btn-primary flex-1">
-              保存
+              {language === 'en' ? 'Save' : '保存'}
             </button>
             <button type="button" onClick={cancel} className="btn-secondary flex-1">
-              取消
+              {language === 'en' ? 'Cancel' : '取消'}
             </button>
           </div>
         </div>
@@ -177,7 +179,7 @@ export default function RecipeList({ items }) {
 
       {items.length === 0 && !isAdding && (
         <div className="card text-center py-8 text-stone-500">
-          <p>还没有添加饮品配方，点击上方「添加配方」</p>
+          <p>{language === 'en' ? 'No recipes yet. Tap "Add Recipe" above.' : '还没有添加饮品配方，点击上方「添加配方」'}</p>
         </div>
       )}
 
@@ -221,7 +223,7 @@ export default function RecipeList({ items }) {
                     type="button"
                     onClick={() => openEdit(r)}
                     className="p-2 rounded-xl text-coffee-600 hover:bg-cream-300"
-                    aria-label="编辑"
+                    aria-label={language === 'en' ? 'Edit' : '编辑'}
                   >
                     <PencilSimple size={18} />
                   </button>
@@ -229,7 +231,7 @@ export default function RecipeList({ items }) {
                     type="button"
                     onClick={() => deleteRecipe(r.id)}
                     className="p-2 rounded-xl text-red-600/80 hover:bg-cream-300"
-                    aria-label="删除"
+                    aria-label={language === 'en' ? 'Delete' : '删除'}
                   >
                     <Trash size={18} />
                   </button>

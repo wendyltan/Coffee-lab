@@ -40,7 +40,17 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"Noto Sans SC"', 'system-ui', 'sans-serif'],
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"PingFang SC"',
+          '"Hiragino Sans GB"',
+          '"Microsoft YaHei"',
+          '"Noto Sans CJK SC"',
+          '"Noto Sans SC"',
+          'system-ui',
+          'sans-serif',
+        ],
       },
       borderRadius: {
         '2xl': '1rem',

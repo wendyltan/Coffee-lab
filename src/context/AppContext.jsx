@@ -8,8 +8,16 @@ import {
   setEquipment as saveEquipment,
   getRecipes,
   setRecipes as saveRecipes,
+  getLanguage,
+  setLanguage as saveLanguage,
+  getSubscription,
+  setSubscription as saveSubscription,
+  getBeanFreshnessSettings,
+  setBeanFreshnessSettings as saveBeanFreshnessSettings,
 } from '../lib/storage'
+import { DEFAULT_BEAN_BEST_WINDOW_WEEKS } from '../lib/constants'
 import { generateId, getTodayKey } from '../lib/utils'
+import { translate } from '../lib/i18n'
 
 const AppContext = createContext(null)
 
@@ -18,12 +26,24 @@ export function AppProvider({ children }) {
   const [beans, setBeansState] = useState([])
   const [equipment, setEquipmentState] = useState([])
   const [recipes, setRecipesState] = useState([])
+  const [language, setLanguageState] = useState('zh-Hans')
+  const [subscription, setSubscriptionState] = useState({
+    plan: 'free',
+    isActive: false,
+    startedAt: null,
+  })
+  const [beanFreshnessSettings, setBeanFreshnessSettingsState] = useState(
+    DEFAULT_BEAN_BEST_WINDOW_WEEKS
+  )
 
   useEffect(() => {
     setLogsState(getLogs())
     setBeansState(getBeans())
     setEquipmentState(getEquipment())
     setRecipesState(getRecipes())
+    setLanguageState(getLanguage())
+    setSubscriptionState(getSubscription())
+    setBeanFreshnessSettingsState(getBeanFreshnessSettings())
   }, [])
 
   const setLogs = useCallback((next) => {
@@ -57,6 +77,49 @@ export function AppProvider({ children }) {
       return list
     })
   }, [])
+
+  const setLanguage = useCallback((nextLanguage) => {
+    setLanguageState(() => {
+      saveLanguage(nextLanguage)
+      return nextLanguage
+    })
+  }, [])
+
+  const setSubscription = useCallback((next) => {
+    setSubscriptionState((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next
+      saveSubscription(value)
+      return value
+    })
+  }, [])
+
+  const setBeanFreshnessSettings = useCallback((next) => {
+    setBeanFreshnessSettingsState((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next
+      saveBeanFreshnessSettings(value)
+      return getBeanFreshnessSettings()
+    })
+  }, [])
+
+  const resetBeanFreshnessSettings = useCallback(() => {
+    setBeanFreshnessSettings(DEFAULT_BEAN_BEST_WINDOW_WEEKS)
+  }, [setBeanFreshnessSettings])
+
+  const activatePremiumDemo = useCallback(() => {
+    setSubscription({
+      plan: 'pro',
+      isActive: true,
+      startedAt: new Date().toISOString(),
+    })
+  }, [setSubscription])
+
+  const cancelPremiumDemo = useCallback(() => {
+    setSubscription({
+      plan: 'free',
+      isActive: false,
+      startedAt: null,
+    })
+  }, [setSubscription])
 
   const addLog = useCallback(
     (entry) => {
@@ -187,6 +250,13 @@ export function AppProvider({ children }) {
     return (logsByDate[today] || []).length
   }, [logsByDate])
 
+  const isPremium = subscription.plan === 'pro' && subscription.isActive
+
+  const t = useCallback(
+    (key, fallback = '') => translate(language, key, fallback),
+    [language]
+  )
+
   const value = useMemo(
     () => ({
       logs,
@@ -212,6 +282,16 @@ export function AppProvider({ children }) {
       addRecipe,
       updateRecipe,
       deleteRecipe,
+      language,
+      setLanguage,
+      subscription,
+      isPremium,
+      activatePremiumDemo,
+      cancelPremiumDemo,
+      beanFreshnessSettings,
+      setBeanFreshnessSettings,
+      resetBeanFreshnessSettings,
+      t,
     }),
     [
       logs,
@@ -237,6 +317,16 @@ export function AppProvider({ children }) {
       addRecipe,
       updateRecipe,
       deleteRecipe,
+      language,
+      setLanguage,
+      subscription,
+      isPremium,
+      activatePremiumDemo,
+      cancelPremiumDemo,
+      beanFreshnessSettings,
+      setBeanFreshnessSettings,
+      resetBeanFreshnessSettings,
+      t,
     ]
   )
 

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,20 +5,26 @@
 @layer base {
   html {
     @apply antialiased;
-    /* iOS 安全区：避免内容被刘海、圆角、底部横条遮挡 */
-    padding-top: env(safe-area-inset-top, 0);
-    padding-left: env(safe-area-inset-left, 0);
-    padding-right: env(safe-area-inset-right, 0);
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    height: 100%;
+    background-color: #F5F0E8;
   }
   body {
-    @apply bg-cream-200 text-coffee-800 font-sans min-h-screen;
+    @apply bg-cream-200 text-coffee-800 font-sans;
+    height: 100%;
+    overscroll-behavior-y: none;
+    background-color: #F5F0E8;
+    overflow: hidden;
+  }
+  #root {
+    height: 100%;
+    background-color: #F5F0E8;
   }
   /* 安全区域工具类，适配 iOS 刘海与底部横条 */
   .pt-safe { padding-top: env(safe-area-inset-top, 0); }
   .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0); }
   .pl-safe { padding-left: env(safe-area-inset-left, 0); }
   .pr-safe { padding-right: env(safe-area-inset-right, 0); }
+  .top-safe { top: env(safe-area-inset-top, 0); }
 }
 
 @layer components {
@@ -49,4 +53,44 @@
 }
 .animate-recipe-layer-in {
   animation: recipe-layer-in 0.4s ease-out forwards;
+}
+
+/* Bottom nav liquid-glass effect */
+.liquid-nav {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -8px 20px rgba(139, 115, 85, 0.08),
+    0 8px 28px rgba(92, 83, 70, 0.12);
+}
+
+.liquid-nav-indicator {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.7) 0%,
+      rgba(255, 255, 255, 0.42) 55%,
+      rgba(255, 255, 255, 0.3) 100%
+    );
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -4px 10px rgba(139, 115, 85, 0.12),
+    0 4px 14px rgba(92, 83, 70, 0.12);
+}
+
+/* Hide native number arrows when custom steppers are present */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinner[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.app-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }

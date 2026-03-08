@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { X, Plus } from '@phosphor-icons/react'
 import { RECIPE_INGREDIENT_PRESETS } from '../../lib/constants'
 import { getIngredientIcon, DEFAULT_ICON_SIZE } from '../../lib/iconMap'
+import { useApp } from '../../context/AppContext'
 
 const CUP_HEIGHT_PX = 160
 
@@ -12,6 +13,7 @@ function getIngredientColor(name, customColor) {
 }
 
 export default function RecipeBuilder({ ingredients = [], onChange, onClose, onSave }) {
+  const { language } = useApp()
   const [list, setList] = useState(() => ingredients.map((i) => ({ ...i })))
   const [modal, setModal] = useState(null)
   const [customName, setCustomName] = useState('')
@@ -30,17 +32,30 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
 
   const totalMl = list.reduce((s, i) => s + (Number(i.ml) || 0), 0)
   const iceLayer = list.find((ing) => ing.isIce)
+  const iceLabelText = (fraction) => {
+    if (language === 'en') {
+      return fraction >= 1 ? 'full cup' : fraction >= 0.9 ? '90%' : fraction >= 0.8 ? '80%' : '70%'
+    }
+    return fraction >= 1 ? '满杯' : fraction >= 0.9 ? '九分满' : fraction >= 0.8 ? '八分满' : '七分满'
+  }
   const iceFraction = iceLayer?.fraction ?? null
   const iceLabel =
     iceFraction == null
       ? null
-      : iceFraction >= 1
-          ? '满杯'
-          : iceFraction >= 0.9
-            ? '九分满'
-            : iceFraction >= 0.8
-              ? '八分满'
-              : '七分满'
+      : iceLabelText(iceFraction)
+  const ingredientName = (item) => {
+    const preset = RECIPE_INGREDIENT_PRESETS.find((p) => p.name === item.name)
+    if (language !== 'en') return item.name
+    const map = {
+      milk: 'Milk',
+      espresso: 'Espresso',
+      orange: 'Orange Juice',
+      oat_milk: 'Oat Milk',
+      ice: 'Ice',
+    }
+    if (preset?.id && map[preset.id]) return map[preset.id]
+    return item.name
+  }
 
   const addPreset = (preset) => {
     setMlInput('')
@@ -61,7 +76,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
     if (num <= 0 || !modal) return
     const baseItem = modal.preset
       ? { name: modal.preset.name, ml: num, color: modal.preset.color }
-      : { name: customName || '其他', ml: num, color: customColor }
+      : { name: customName || (language === 'en' ? 'Other' : '其他'), ml: num, color: customColor }
 
     const item =
       modal.preset && modal.preset.id === 'milk'
@@ -115,12 +130,12 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
   return (
     <div className="fixed inset-0 z-[80] flex flex-col bg-cream-200 overflow-hidden">
       <header className="flex items-center justify-between p-4 border-b border-cream-400/50">
-        <span className="font-semibold text-coffee-800">配方说明 · 用量杯调配</span>
+        <span className="font-semibold text-coffee-800">{language === 'en' ? 'Recipe Builder' : '配方说明 · 用量杯调配'}</span>
         <button
           type="button"
           onClick={onClose}
           className="p-2 rounded-xl hover:bg-cream-300 text-coffee-700"
-          aria-label="关闭"
+          aria-label={language === 'en' ? 'Close' : '关闭'}
         >
           <X size={22} />
         </button>
@@ -182,21 +197,21 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
               })
             })()}
           </div>
-            <p className="text-center text-sm text-stone-500 mt-2">出品杯</p>
+            <p className="text-center text-sm text-stone-500 mt-2">{language === 'en' ? 'Serving Cup' : '出品杯'}</p>
 
             {/* 本杯配方：悬停可看全文 */}
             <div className="w-full text-center min-h-[2.5rem]">
               {list.length === 0 ? (
-                <p className="text-sm text-stone-400">点击下方配料添加</p>
+                <p className="text-sm text-stone-400">{language === 'en' ? 'Tap ingredients below to add' : '点击下方配料添加'}</p>
               ) : (
                 (() => {
                   const formulaText = list
                     .filter((i) => !i.isIce)
-                    .map((i) => `${i.name} ${i.ml}ml${i.foamCm ? ` · 奶泡${i.foamCm}cm` : ''}`)
-                    .join(' · ') + (iceLabel != null ? (list.some((x) => !x.isIce) ? ' · ' : '') + `冰块 ${iceLabel}` : '')
+                    .map((i) => `${ingredientName(i)} ${i.ml}ml${i.foamCm ? ` · ${language === 'en' ? 'foam' : '奶泡'}${i.foamCm}cm` : ''}`)
+                    .join(' · ') + (iceLabel != null ? (list.some((x) => !x.isIce) ? ' · ' : '') + `${language === 'en' ? 'Ice' : '冰块'} ${iceLabel}` : '')
                   return (
                     <p className="text-sm text-coffee-700 leading-relaxed" title={formulaText}>
-                      {list.filter((i) => !i.isIce).map((i) => `${i.name} ${i.ml}ml${i.foamCm ? ` · 奶泡${i.foamCm}cm` : ''}`).join(' · ')}
+                      {list.filter((i) => !i.isIce).map((i) => `${ingredientName(i)} ${i.ml}ml${i.foamCm ? ` · ${language === 'en' ? 'foam' : '奶泡'}${i.foamCm}cm` : ''}`).join(' · ')}
                       {iceLabel != null && (
                         <>
                           {list.some((x) => !x.isIce) ? ' · ' : ''}
@@ -205,7 +220,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
                               const Icon = getIngredientIcon('ice')
                               return <Icon size={14} weight="duotone" className="inline" />
                             })()}
-                            冰块 {iceLabel}
+                            {language === 'en' ? 'Ice' : '冰块'} {iceLabel}
                           </span>
                         </>
                       )}
@@ -218,7 +233,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
 
           {/* 添加配料 */}
           <div className="w-full">
-            <p className="text-sm text-stone-500 mb-2 text-center">添加配料</p>
+            <p className="text-sm text-stone-500 mb-2 text-center">{language === 'en' ? 'Add Ingredient' : '添加配料'}</p>
             <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
           {RECIPE_INGREDIENT_PRESETS.map((p) => {
             const Icon = getIngredientIcon(p.id)
@@ -231,7 +246,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
                 style={{ backgroundColor: p.color + '40' }}
               >
                 <Icon size={28} weight="duotone" className="text-coffee-700" />
-                <span className="text-xs font-medium text-coffee-800">{p.name}</span>
+                <span className="text-xs font-medium text-coffee-800">{ingredientName(p)}</span>
               </button>
             )
           })}
@@ -241,7 +256,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
             className="card flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl hover:scale-105 active:scale-95 transition-transform border-2 border-dashed border-coffee-400/50 text-stone-500"
           >
             <Plus size={24} />
-            <span className="text-xs font-medium">自定义</span>
+            <span className="text-xs font-medium">{language === 'en' ? 'Custom' : '自定义'}</span>
           </button>
             </div>
           </div>
@@ -251,7 +266,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
       {/* 已加配料列表 */}
       {list.length > 0 && (
         <div className="p-4 border-t border-cream-400/50">
-          <p className="text-sm text-stone-500 mb-2">已添加：</p>
+          <p className="text-sm text-stone-500 mb-2">{language === 'en' ? 'Added:' : '已添加：'}</p>
           <div className="flex flex-wrap gap-2">
             {list.map((ing, i) => (
               <span
@@ -260,13 +275,13 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
                 style={{ backgroundColor: getIngredientColor(ing.name, ing.color) + '80' }}
               >
                 {ing.isIce
-                  ? `${ing.name}${(ing.fraction ?? 0.7) >= 1 ? '满杯' : (ing.fraction ?? 0.7) >= 0.9 ? '九分满' : (ing.fraction ?? 0.7) >= 0.8 ? '八分满' : '七分满'}`
-                  : `${ing.name} ${ing.ml}ml${ing.foamCm ? ` · 奶泡 ${ing.foamCm}cm` : ''}`}
+                  ? `${ingredientName(ing)} ${iceLabelText(ing.fraction ?? 0.7)}`
+                  : `${ingredientName(ing)} ${ing.ml}ml${ing.foamCm ? ` · ${language === 'en' ? 'foam' : '奶泡'} ${ing.foamCm}cm` : ''}`}
                 <button
                   type="button"
                   onClick={() => removeAt(i)}
                   className="ml-0.5 rounded-full p-0.5 hover:bg-black/10"
-                  aria-label="移除"
+                  aria-label={language === 'en' ? 'Remove' : '移除'}
                 >
                   <X size={14} />
                 </button>
@@ -285,14 +300,14 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
                 const Icon = getIngredientIcon(modal.preset.id)
                 return <Icon size={DEFAULT_ICON_SIZE} weight="duotone" />
               })()}
-              {modal.preset.name} — 多少 ml？
+              {ingredientName(modal.preset)} {language === 'en' ? '- how many ml?' : '— 多少 ml？'}
             </p>
             <input
               type="number"
               min="1"
               max="999"
               className="input-field"
-              placeholder="输入毫升数"
+              placeholder={language === 'en' ? 'Enter ml' : '输入毫升数'}
               value={mlInput}
               onChange={(e) => setMlInput(e.target.value)}
               autoFocus
@@ -302,13 +317,13 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
             />
             {modal.preset.id === 'milk' && (
               <div className="space-y-1">
-                <label className="block text-sm text-stone-500">奶泡厚度（cm，可选）</label>
+                <label className="block text-sm text-stone-500">{language === 'en' ? 'Foam thickness (cm, optional)' : '奶泡厚度（cm，可选）'}</label>
                 <input
                   type="number"
                   min="0"
                   max="10"
                   className="input-field"
-                  placeholder="如：1.5"
+                  placeholder={language === 'en' ? 'e.g. 1.5' : '如：1.5'}
                   value={foamCm}
                   onChange={(e) => setFoamCm(e.target.value)}
                 />
@@ -332,10 +347,10 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
                 onClick={() => confirmMl(mlInput)}
                 className="btn-primary flex-1"
               >
-                确定
+                {language === 'en' ? 'Confirm' : '确定'}
               </button>
               <button type="button" onClick={() => { setModal(null); setMlInput('') }} className="btn-secondary flex-1">
-                取消
+                {language === 'en' ? 'Cancel' : '取消'}
               </button>
             </div>
           </div>
@@ -346,11 +361,11 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
       {modal?.type === 'custom' && (
         <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-4 z-10">
           <div className="card max-w-xs w-full space-y-3">
-            <p className="font-medium text-coffee-800">自定义配料</p>
+            <p className="font-medium text-coffee-800">{language === 'en' ? 'Custom Ingredient' : '自定义配料'}</p>
             <input
               type="text"
               className="input-field"
-              placeholder="名称（如：糖浆、气泡水）"
+              placeholder={language === 'en' ? 'Name (e.g. syrup, soda water)' : '名称（如：糖浆、气泡水）'}
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
             />
@@ -359,12 +374,12 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
               min="1"
               max="999"
               className="input-field"
-              placeholder="毫升数"
+              placeholder={language === 'en' ? 'ml' : '毫升数'}
               value={customMl}
               onChange={(e) => setCustomMl(e.target.value)}
             />
             <div className="flex items-center gap-2">
-              <span className="text-sm text-stone-500">颜色</span>
+              <span className="text-sm text-stone-500">{language === 'en' ? 'Color' : '颜色'}</span>
               <input
                 type="color"
                 value={customColor}
@@ -378,10 +393,10 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
                 onClick={() => confirmMl(customMl)}
                 className="btn-primary flex-1"
               >
-                确定
+                {language === 'en' ? 'Confirm' : '确定'}
               </button>
               <button type="button" onClick={() => setModal(null)} className="btn-secondary flex-1">
-                取消
+                {language === 'en' ? 'Cancel' : '取消'}
               </button>
             </div>
           </div>
@@ -397,14 +412,14 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
                 const Icon = getIngredientIcon(modal.preset.id)
                 return <Icon size={DEFAULT_ICON_SIZE} weight="duotone" />
               })()}
-              {modal.preset.name} — 出品杯几分满？
+              {ingredientName(modal.preset)} {language === 'en' ? '- cup level?' : '— 出品杯几分满？'}
             </p>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: '七分满', value: 0.7 },
-                { label: '八分满', value: 0.8 },
-                { label: '九分满', value: 0.9 },
-                { label: '满杯', value: 1 },
+                { label: language === 'en' ? '70%' : '七分满', value: 0.7 },
+                { label: language === 'en' ? '80%' : '八分满', value: 0.8 },
+                { label: language === 'en' ? '90%' : '九分满', value: 0.9 },
+                { label: language === 'en' ? 'Full cup' : '满杯', value: 1 },
               ].map((opt) => (
                 <button
                   key={opt.value}
@@ -421,7 +436,7 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
               onClick={() => setModal(null)}
               className="btn-secondary w-full"
             >
-              取消
+              {language === 'en' ? 'Cancel' : '取消'}
             </button>
           </div>
         </div>
@@ -434,14 +449,14 @@ export default function RecipeBuilder({ ingredients = [], onChange, onClose, onS
           disabled={list.length === 0}
           className="btn-secondary disabled:opacity-40"
         >
-          撤回一步
+          {language === 'en' ? 'Undo' : '撤回一步'}
         </button>
         <button type="button" onClick={onClose} className="btn-secondary">
-          返回
+          {language === 'en' ? 'Back' : '返回'}
         </button>
         {onSave && (
           <button type="button" onClick={onSave} className="btn-primary">
-            保存配方
+            {language === 'en' ? 'Save Recipe' : '保存配方'}
           </button>
         )}
       </div>

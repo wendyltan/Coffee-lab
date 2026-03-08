@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { Coffee } from '@phosphor-icons/react'
+import { Coffee, Heart } from '@phosphor-icons/react'
 import { formatDateKey } from '../lib/utils'
+import { useApp } from '../context/AppContext'
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
+const WEEKDAYS_EN = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
 
 export default function Calendar({ logsByDate, onSelectDate, selectedDate }) {
+  const { language, t } = useApp()
   const [viewDate, setViewDate] = useState(() => new Date())
   const year = viewDate.getFullYear()
   const month = viewDate.getMonth()
@@ -22,6 +25,11 @@ export default function Calendar({ logsByDate, onSelectDate, selectedDate }) {
   for (let i = 0; i < startPad; i++) days.push(null)
   for (let i = 1; i <= daysInMonth; i++) days.push(i)
 
+  const monthTitle =
+    language === 'en'
+      ? new Date(year, month, 1).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+      : `${year}年${month + 1}月`
+
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
@@ -29,25 +37,25 @@ export default function Calendar({ logsByDate, onSelectDate, selectedDate }) {
           type="button"
           onClick={prevMonth}
           className="p-2 rounded-xl text-coffee-600 hover:bg-cream-300 transition-colors"
-          aria-label="上月"
+          aria-label={t('calendar.prevMonth', '上月')}
         >
           ‹
         </button>
         <span className="font-semibold text-coffee-800">
-          {year}年{month + 1}月
+          {monthTitle}
         </span>
         <button
           type="button"
           onClick={nextMonth}
           className="p-2 rounded-xl text-coffee-600 hover:bg-cream-300 transition-colors"
-          aria-label="下月"
+          aria-label={t('calendar.nextMonth', '下月')}
         >
           ›
         </button>
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center">
-        {WEEKDAYS.map((w) => (
+        {(language === 'en' ? WEEKDAYS_EN : WEEKDAYS).map((w) => (
           <div key={w} className="text-xs text-stone-500 py-1">
             {w}
           </div>
@@ -55,7 +63,9 @@ export default function Calendar({ logsByDate, onSelectDate, selectedDate }) {
         {days.map((day, idx) => {
           if (day === null) return <div key={`empty-${idx}`} />
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-          const hasLog = (logsByDate[dateKey] || []).length > 0
+          const dayLogs = logsByDate[dateKey] || []
+          const hasLog = dayLogs.length > 0
+          const hasFavorite = dayLogs.some((log) => Boolean(log?.isFavorite))
           const isToday = dateKey === todayKey
           const isSelected = selectedDate === dateKey
           return (
@@ -72,11 +82,18 @@ export default function Calendar({ logsByDate, onSelectDate, selectedDate }) {
               `}
             >
               <span>{day}</span>
-              {hasLog && (
+              {hasLog && !hasFavorite && (
                 <Coffee
                   size={12}
                   className={isSelected ? 'text-cream-100' : 'text-coffee-500'}
                   strokeWidth={2.5}
+                />
+              )}
+              {hasFavorite && (
+                <Heart
+                  size={12}
+                  weight="fill"
+                  className={isSelected ? 'text-cream-100' : 'text-coffee-500'}
                 />
               )}
             </button>

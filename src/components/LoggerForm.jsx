@@ -4,8 +4,7 @@ import { FloppyDisk } from '@phosphor-icons/react'
 import { useApp } from '../context/AppContext'
 import { ROAST_LEVELS, EQUIPMENT_TYPES } from '../lib/constants'
 import { getRoastIcon, getSectionIcon, DEFAULT_ICON_SIZE } from '../lib/iconMap'
-import { getProductionAgeText } from '../lib/utils'
-import { calcRatio, getTodayKey } from '../lib/utils'
+import { calcRatio, getTodayKey, getBeanAgeSnapshot, getBestWindowDaysForRoast } from '../lib/utils'
 import StarRating from './StarRating'
 
 function EquipmentCombobox({
@@ -17,6 +16,7 @@ function EquipmentCombobox({
   filterType,
   allowedTypes,
   onSelect,
+  getTypeLabel,
 }) {
   const [open, setOpen] = useState(false)
   const blurTimerRef = useRef(null)
@@ -70,8 +70,9 @@ function EquipmentCombobox({
       {open && filtered.length > 0 && (
         <ul className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-y-auto rounded-2xl border border-cream-400 bg-cream-100 shadow-card py-1">
           {filtered.map((eq) => {
-            const typeLabel =
-              EQUIPMENT_TYPES.find((t) => t.value === (eq.type ?? 'other'))?.label ?? ''
+            const typeLabel = getTypeLabel
+              ? getTypeLabel(eq.type ?? 'other')
+              : EQUIPMENT_TYPES.find((t) => t.value === (eq.type ?? 'other'))?.label ?? ''
             const display =
               filterType === 'grinder'
                 ? eq.brand ?? ''
@@ -116,7 +117,17 @@ const defaultForm = {
 export default function LoggerForm() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { addLog, updateLog, logs, beans, equipment, recipes } = useApp()
+  const {
+    addLog,
+    updateLog,
+    logs,
+    beans,
+    equipment,
+    recipes,
+    t,
+    language,
+    beanFreshnessSettings,
+  } = useApp()
   const [form, setForm] = useState(defaultForm)
 
   const isEdit = Boolean(id)
@@ -146,6 +157,30 @@ export default function LoggerForm() {
   }, [existingLog, id])
 
   const ratio = calcRatio(form.doseG, form.yieldMl)
+  const effectiveLogDate = isEdit ? existingLog?.date || getTodayKey() : getTodayKey()
+  const bestWindowDays = getBestWindowDaysForRoast(form.roast, beanFreshnessSettings)
+  const beanAgeSnapshot = getBeanAgeSnapshot(form.beanProductionDate, effectiveLogDate, bestWindowDays)
+  const beanAgeText = beanAgeSnapshot ? `第${beanAgeSnapshot.weeks}周第${beanAgeSnapshot.remainDays}天` : null
+  const beanAgeWarning = beanAgeSnapshot?.isOverBestWindow
+  const getRoastText = (value) => {
+    const map = {
+      light: t('roast.light', '浅烘'),
+      medium: t('roast.medium', '中烘'),
+      dark: t('roast.dark', '深烘'),
+    }
+    return map[value] ?? value
+  }
+  const getEquipmentTypeText = (value) => {
+    const map = {
+      espresso_machine: language === 'en' ? 'Espresso Machine' : '咖啡机',
+      moka_pot: language === 'en' ? 'Moka Pot' : '摩卡壶',
+      grinder: language === 'en' ? 'Grinder' : '磨豆机',
+      tamper: language === 'en' ? 'Tamper' : '压粉器',
+      pour_over_kettle: language === 'en' ? 'Pour-over Kettle' : '手冲壶',
+      other: language === 'en' ? 'Other' : '其他',
+    }
+    return map[value] ?? value
+  }
 
   const update = (key, value) => setForm((f) => ({ ...f, [key]: value }))
 
@@ -187,7 +222,9 @@ export default function LoggerForm() {
             if (i.isIce) {
               const frac = i.fraction ?? 0.7
               const label =
-                frac >= 1 ? '满杯' : frac >= 0.9 ? '九分满' : frac >= 0.8 ? '八分满' : '七分满'
+                language === 'en'
+                  ? frac >= 1 ? 'full cup' : frac >= 0.9 ? '90%' : frac >= 0.8 ? '80%' : '70%'
+                  : frac >= 1 ? '满杯' : frac >= 0.9 ? '九分满' : frac >= 0.8 ? '八分满' : '七分满'
               return `${i.name}${label}`
             }
             return `${i.name}${i.ml}ml`
@@ -200,11 +237,31 @@ export default function LoggerForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    const keepExistingBeanAgeSnapshot =
+      isEdit &&
+      existingLog &&
+      (existingLog.beanProductionDate ?? '') === (form.beanProductionDate || '') &&
+      (existingLog.roast ?? '') === (form.roast || '')
     const payload = {
       beanName: form.beanName,
       beanOrigin: form.beanOrigin,
       roast: form.roast,
       beanProductionDate: form.beanProductionDate || undefined,
+      beanAgeDaysAtLog: keepExistingBeanAgeSnapshot
+        ? existingLog.beanAgeDaysAtLog ?? null
+        : beanAgeSnapshot?.days ?? null,
+      beanAgeWeeksAtLog: keepExistingBeanAgeSnapshot
+        ? existingLog.beanAgeWeeksAtLog ?? null
+        : beanAgeSnapshot?.weeks ?? null,
+      beanAgeRemainDaysAtLog: keepExistingBeanAgeSnapshot
+        ? existingLog.beanAgeRemainDaysAtLog ?? null
+        : beanAgeSnapshot?.remainDays ?? null,
+      beanOutOfBestWindowAtLog: keepExistingBeanAgeSnapshot
+        ? Boolean(existingLog.beanOutOfBestWindowAtLog)
+        : Boolean(beanAgeSnapshot?.isOverBestWindow),
+      beanBestWindowDaysAtLog: keepExistingBeanAgeSnapshot
+        ? existingLog.beanBestWindowDaysAtLog ?? bestWindowDays
+        : bestWindowDays,
       equipmentDisplay: form.equipmentDisplay,
       grinderBrand: form.grinderBrand,
       grindSetting: form.grindSetting,
@@ -229,18 +286,18 @@ export default function LoggerForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 space-y-6">
+    <form onSubmit={handleSubmit} className="p-4 space-y-6 pb-10">
       <section className="card">
         <h2 className="text-lg font-semibold text-coffee-800 mb-3 flex items-center gap-2">
           {(() => {
             const Icon = getSectionIcon('beans')
             return <Icon size={DEFAULT_ICON_SIZE} weight="duotone" />
           })()}
-          豆子信息
+          {language === 'en' ? 'Bean Info' : '豆子信息'}
         </h2>
         {beans.length > 0 && (
           <div className="mb-3">
-            <label className="block text-sm text-stone-500 mb-1">从豆子库填充</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Fill from bean library' : '从豆子库填充'}</label>
             <select
               className="input-field"
               value=""
@@ -249,7 +306,7 @@ export default function LoggerForm() {
                 if (b) fillFromBean(b)
               }}
             >
-              <option value="">选择豆子...</option>
+              <option value="">{language === 'en' ? 'Select bean...' : '选择豆子...'}</option>
               {beans.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name} · {b.origin}
@@ -260,28 +317,28 @@ export default function LoggerForm() {
         )}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm text-stone-500 mb-1">种类/名称</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Bean name' : '种类/名称'}</label>
             <input
               type="text"
               className="input-field"
               value={form.beanName}
               onChange={(e) => update('beanName', e.target.value)}
-              placeholder="如：耶加雪菲"
+              placeholder={language === 'en' ? 'e.g. Yirgacheffe' : '如：耶加雪菲'}
             />
           </div>
           <div>
-            <label className="block text-sm text-stone-500 mb-1">产地</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Origin' : '产地'}</label>
             <input
               type="text"
               className="input-field"
               value={form.beanOrigin}
               onChange={(e) => update('beanOrigin', e.target.value)}
-              placeholder="如：埃塞俄比亚"
+              placeholder={language === 'en' ? 'e.g. Ethiopia' : '如：埃塞俄比亚'}
             />
           </div>
         </div>
         <div className="mt-3">
-          <label className="block text-sm text-stone-500 mb-1">烘焙度</label>
+          <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Roast' : '烘焙度'}</label>
           <div className="flex gap-2 flex-wrap">
             {ROAST_LEVELS.map((r) => {
               const Icon = getRoastIcon(r.value)
@@ -297,15 +354,24 @@ export default function LoggerForm() {
                   }`}
                 >
                   <Icon size={DEFAULT_ICON_SIZE} weight="duotone" />
-                  {r.label}
+                  {getRoastText(r.value)}
                 </button>
               )
             })}
           </div>
         </div>
-        {getProductionAgeText(form.beanProductionDate) && (
+        {!beanAgeWarning && beanAgeText && (
           <p className="text-sm text-stone-500 mt-2">
-            豆子已生产{getProductionAgeText(form.beanProductionDate)}
+            {language === 'en'
+              ? `At logging time: week ${beanAgeSnapshot.weeks}, day ${beanAgeSnapshot.remainDays} after roast`
+              : `记录于豆子生产${beanAgeText}`}
+          </p>
+        )}
+        {beanAgeWarning && (
+          <p className="text-xs text-peach-500 mt-2 leading-5">
+            {language === 'en'
+              ? `This bean is past the best flavor window (~${Math.floor(bestWindowDays / 7)} weeks for current roast). You may switch to another bean, or update roast date in Bean Library if you bought a fresh batch. You can still save this log.`
+              : `该豆子已超过最佳赏味期（当前烘焙度约${Math.floor(bestWindowDays / 7)}周）。建议换用其他豆子，或若已新买同款豆子可去豆子库更新生产日期。你仍可继续保存本条记录。`}
           </p>
         )}
       </section>
@@ -316,11 +382,11 @@ export default function LoggerForm() {
             const Icon = getSectionIcon('extraction')
             return <Icon size={DEFAULT_ICON_SIZE} weight="duotone" />
           })()}
-          萃取与设备
+          {language === 'en' ? 'Extraction & Gear' : '萃取与设备'}
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm text-stone-500 mb-1">粉重 (g)</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Dose (g)' : '粉重 (g)'}</label>
             <input
               type="number"
               step="0.1"
@@ -332,7 +398,7 @@ export default function LoggerForm() {
             />
           </div>
           <div>
-            <label className="block text-sm text-stone-500 mb-1">液重 (ml)</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Yield (ml)' : '液重 (ml)'}</label>
             <input
               type="number"
               step="0.5"
@@ -346,51 +412,54 @@ export default function LoggerForm() {
         </div>
         {ratio && (
           <p className="mt-2 text-sm text-sage-500 font-medium">
-            粉液比 ≈ {ratio}
+            {language === 'en' ? `Brew ratio ≈ ${ratio}` : `粉液比 ≈ ${ratio}`}
           </p>
         )}
 
         {/* 设备：输入框 + 设备库联想 */}
         <div className="mt-4 space-y-3">
           <EquipmentCombobox
-            label="使用设备（品牌 型号）"
+            label={language === 'en' ? 'Equipment (brand model)' : '使用设备（品牌 型号）'}
             value={form.equipmentDisplay}
             onChange={(v) => update('equipmentDisplay', v)}
-            placeholder="输入或从下方选择"
+            placeholder={language === 'en' ? 'Type or choose below' : '输入或从下方选择'}
             equipment={equipment}
             filterType={null}
             allowedTypes={['espresso_machine', 'moka_pot', 'pour_over_kettle', 'other']}
             onSelect={fillDeviceFromEquipment}
+            getTypeLabel={getEquipmentTypeText}
           />
           <div className="grid grid-cols-2 gap-3">
             <EquipmentCombobox
-              label="磨豆机"
+              label={language === 'en' ? 'Grinder' : '磨豆机'}
               value={form.grinderBrand}
               onChange={(v) => update('grinderBrand', v)}
-              placeholder="品牌/型号"
+              placeholder={language === 'en' ? 'Brand/model' : '品牌/型号'}
               equipment={equipment}
               filterType="grinder"
               onSelect={fillGrinderFromEquipment}
+              getTypeLabel={getEquipmentTypeText}
             />
             <div>
-              <label className="block text-sm text-stone-500 mb-1">磨豆档位</label>
+              <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Grind setting' : '磨豆档位'}</label>
               <input
                 type="text"
                 className="input-field"
                 value={form.grindSetting}
                 onChange={(e) => update('grindSetting', e.target.value)}
-                placeholder="如：15"
+                placeholder={language === 'en' ? 'e.g. 15' : '如：15'}
               />
             </div>
           </div>
           <EquipmentCombobox
-            label="压粉器信息"
+            label={language === 'en' ? 'Tamper info' : '压粉器信息'}
             value={form.tamperInfo}
             onChange={(v) => update('tamperInfo', v)}
-            placeholder="输入或从下方选择"
+            placeholder={language === 'en' ? 'Type or choose below' : '输入或从下方选择'}
             equipment={equipment}
             filterType="tamper"
             onSelect={fillTamperFromEquipment}
+            getTypeLabel={getEquipmentTypeText}
           />
         </div>
       </section>
@@ -401,11 +470,11 @@ export default function LoggerForm() {
             const Icon = getSectionIcon('recipe')
             return <Icon size={DEFAULT_ICON_SIZE} weight="duotone" />
           })()}
-          饮品调配
+          {language === 'en' ? 'Drink Recipe' : '饮品调配'}
         </h2>
         {recipes.length > 0 && (
           <div className="mb-3">
-            <label className="block text-sm text-stone-500 mb-1">导入饮品配方</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Import recipe' : '导入饮品配方'}</label>
             <select
               className="input-field"
               value=""
@@ -414,7 +483,7 @@ export default function LoggerForm() {
                 if (r) fillFromRecipe(r)
               }}
             >
-              <option value="">选择配方...</option>
+              <option value="">{language === 'en' ? 'Select recipe...' : '选择配方...'}</option>
               {recipes.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
@@ -425,32 +494,36 @@ export default function LoggerForm() {
         )}
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-stone-500 mb-1">配方名称</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Recipe name' : '配方名称'}</label>
             <input
               type="text"
               className="input-field"
               value={form.recipeName}
               onChange={(e) => update('recipeName', e.target.value)}
-              placeholder="如：拿铁、橙C美式"
+              placeholder={language === 'en' ? 'e.g. Latte, Orange Americano' : '如：拿铁、橙C美式'}
             />
           </div>
           <div>
-            <label className="block text-sm text-stone-500 mb-1">配方说明</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Recipe detail' : '配方说明'}</label>
             <input
               type="text"
               className="input-field"
               value={form.recipeDetail}
               onChange={(e) => update('recipeDetail', e.target.value)}
-              placeholder="如：浓缩+200ml牛奶"
+              placeholder={language === 'en' ? 'e.g. espresso + 200ml milk' : '如：浓缩+200ml牛奶'}
             />
           </div>
           <div>
-            <label className="block text-sm text-stone-500 mb-1">制作流程（可选）</label>
+            <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Steps (optional)' : '制作流程（可选）'}</label>
             <textarea
               className="input-field min-h-[72px] resize-y"
               value={form.extraAdditions}
               onChange={(e) => update('extraAdditions', e.target.value)}
-              placeholder="选择上方配方可自动带入该配方的制作流程，或在此手动填写。例如：1) 杯中加冰块；2) 倒入橙汁；3) 缓慢倒入浓缩"
+              placeholder={
+                language === 'en'
+                  ? 'Auto-fill from selected recipe, or enter manually. e.g. 1) Add ice 2) Pour orange juice 3) Slowly pour espresso'
+                  : '选择上方配方可自动带入该配方的制作流程，或在此手动填写。例如：1) 杯中加冰块；2) 倒入橙汁；3) 缓慢倒入浓缩'
+              }
             />
           </div>
         </div>
@@ -462,26 +535,26 @@ export default function LoggerForm() {
             const Icon = getSectionIcon('rating')
             return <Icon size={DEFAULT_ICON_SIZE} weight="duotone" />
           })()}
-          风味评分
+          {language === 'en' ? 'Flavor Rating' : '风味评分'}
         </h2>
         <div className="mb-3">
-          <label className="block text-sm text-stone-500 mb-1">评分 (1-5)</label>
+          <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Rating (1-5)' : '评分 (1-5)'}</label>
           <StarRating value={form.rating} onChange={(v) => update('rating', v)} />
         </div>
         <div>
-          <label className="block text-sm text-stone-500 mb-1">备注</label>
+          <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Note' : '备注'}</label>
           <textarea
             className="input-field min-h-[80px] resize-y"
             value={form.note}
             onChange={(e) => update('note', e.target.value)}
-            placeholder="口感、风味、可改进点..."
+            placeholder={language === 'en' ? 'Taste, flavor, improvements...' : '口感、风味、可改进点...'}
           />
         </div>
       </section>
 
       <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-4 text-lg">
         <FloppyDisk size={22} weight="fill" />
-        {isEdit ? '保存修改' : '保存记录'}
+        {isEdit ? (language === 'en' ? 'Save Changes' : '保存修改') : (language === 'en' ? 'Save Log' : '保存记录')}
       </button>
     </form>
   )

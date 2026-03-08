@@ -1,4 +1,4 @@
-# CoffeLab ☕
+# CoffeeLab ☕
 
 咖啡冲煮记录 Web App，用于记录每日制作咖啡的详细参数，优化萃取方案。
 

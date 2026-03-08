@@ -1,6 +1,8 @@
 import { Star } from '@phosphor-icons/react'
+import { useApp } from '../context/AppContext'
 
 export default function StarRating({ value = 0, onChange }) {
+  const { language } = useApp()
   const max = 5
   return (
     <div className="flex gap-1">
@@ -10,7 +12,7 @@ export default function StarRating({ value = 0, onChange }) {
           type="button"
           onClick={() => onChange(star)}
           className="p-1 rounded-lg transition-transform active:scale-90"
-          aria-label={`${star}星`}
+          aria-label={language === 'en' ? `${star} star` : `${star}星`}
         >
           <Star
             size={26}

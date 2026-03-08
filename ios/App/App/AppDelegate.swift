@@ -7,7 +7,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Keep iOS status area and web view backgrounds consistent to avoid black bounce flashes.
+        let appBackground = UIColor(
+            red: 245.0 / 255.0,
+            green: 240.0 / 255.0,
+            blue: 232.0 / 255.0,
+            alpha: 1.0
+        )
+        window?.backgroundColor = appBackground
+
+        DispatchQueue.main.async { [weak self] in
+            guard let bridgeVC = self?.window?.rootViewController as? CAPBridgeViewController else { return }
+            bridgeVC.view.backgroundColor = appBackground
+            bridgeVC.webView?.isOpaque = false
+            bridgeVC.webView?.backgroundColor = appBackground
+            bridgeVC.webView?.scrollView.backgroundColor = appBackground
+            // Prevent iOS rubber-band overscroll from pulling content under status/home areas.
+            bridgeVC.webView?.scrollView.bounces = false
+            bridgeVC.webView?.scrollView.alwaysBounceVertical = false
+        }
+
         return true
     }
 
