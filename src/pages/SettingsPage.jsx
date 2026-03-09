@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Gear, Info, CrownSimple, ClockCounterClockwise } from '@phosphor-icons/react'
 import { useApp } from '../context/AppContext'
+import { ROAST_LEVELS } from '../lib/constants'
 
 const LANG_OPTIONS = [
   { value: 'zh-Hans', label: '中文' },
@@ -21,11 +22,17 @@ export default function SettingsPage() {
     resetBeanFreshnessSettings,
   } = useApp()
   const roastItems = useMemo(
-    () => [
-      { key: 'light', label: language === 'en' ? 'Light Roast' : '浅烘' },
-      { key: 'medium', label: language === 'en' ? 'Medium Roast' : '中烘' },
-      { key: 'dark', label: language === 'en' ? 'Dark Roast' : '深烘' },
-    ],
+    () =>
+      ROAST_LEVELS.map((item) => {
+        const labelMap = {
+          light: language === 'en' ? 'Light Roast' : '浅烘',
+          medium_light: language === 'en' ? 'Medium-Light Roast' : '中浅烘',
+          medium: language === 'en' ? 'Medium Roast' : '中烘',
+          medium_dark: language === 'en' ? 'Medium-Dark Roast' : '中深烘',
+          dark: language === 'en' ? 'Dark Roast' : '深烘',
+        }
+        return { key: item.value, label: labelMap[item.value] ?? item.label }
+      }),
     [language]
   )
 

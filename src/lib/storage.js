@@ -96,7 +96,9 @@ function normalizeBeanFreshnessSettings(value) {
   }
   return {
     light: normalizeWeeks(input.light, DEFAULT_BEAN_BEST_WINDOW_WEEKS.light),
+    medium_light: normalizeWeeks(input.medium_light, DEFAULT_BEAN_BEST_WINDOW_WEEKS.medium_light),
     medium: normalizeWeeks(input.medium, DEFAULT_BEAN_BEST_WINDOW_WEEKS.medium),
+    medium_dark: normalizeWeeks(input.medium_dark, DEFAULT_BEAN_BEST_WINDOW_WEEKS.medium_dark),
     dark: normalizeWeeks(input.dark, DEFAULT_BEAN_BEST_WINDOW_WEEKS.dark),
   }
 }

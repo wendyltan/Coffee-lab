@@ -1,7 +1,9 @@
 // 烘焙度
 export const ROAST_LEVELS = [
   { value: 'light', label: '浅烘', emoji: '🌾' },
+  { value: 'medium_light', label: '中浅烘', emoji: '🌤️' },
   { value: 'medium', label: '中烘', emoji: '🥜' },
+  { value: 'medium_dark', label: '中深烘', emoji: '🌘' },
   { value: 'dark', label: '深烘', emoji: '🫘' },
 ]
 
@@ -34,7 +36,9 @@ export const RECIPE_INGREDIENT_PRESETS = [
 // 豆子最佳赏味期默认阈值（按烘焙度，单位：周）
 export const DEFAULT_BEAN_BEST_WINDOW_WEEKS = {
   light: 8,
+  medium_light: 7,
   medium: 6,
+  medium_dark: 5,
   dark: 4,
 }
 

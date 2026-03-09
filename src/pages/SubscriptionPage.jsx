@@ -1,5 +1,11 @@
-import { CrownSimple, Sparkle, TrendUp, Lightning } from '@phosphor-icons/react'
+import { useRef, useState } from 'react'
+import { CrownSimple, Sparkle, TrendUp, Lightning, FileArrowDown, FileArrowUp } from '@phosphor-icons/react'
 import { useApp } from '../context/AppContext'
+import {
+  exportBrewLogsExcel,
+  exportTemplateExcel,
+  importTemplateExcel,
+} from '../lib/excel'
 
 function toNumber(v) {
   const n = Number(v)
@@ -7,7 +13,22 @@ function toNumber(v) {
 }
 
 export default function SubscriptionPage() {
-  const { logs, isPremium, activatePremiumDemo, cancelPremiumDemo, t, language } = useApp()
+  const {
+    logs,
+    beans,
+    equipment,
+    recipes,
+    setBeans,
+    setEquipment,
+    setRecipes,
+    isPremium,
+    activatePremiumDemo,
+    cancelPremiumDemo,
+    t,
+    language,
+  } = useApp()
+  const fileInputRef = useRef(null)
+  const [actionMessage, setActionMessage] = useState('')
 
   const ratedLogs = logs.filter((l) => toNumber(l.rating) > 0)
   const avgRating = ratedLogs.length
@@ -37,6 +58,71 @@ export default function SubscriptionPage() {
       : language === 'en'
         ? `Average flavor score: ${avgRating}/5`
         : `平均风味评分：${avgRating}/5`
+
+  const mergeById = (prev, incoming) => {
+    const map = new Map(prev.map((item) => [item.id, item]))
+    incoming.forEach((item) => {
+      map.set(item.id, item)
+    })
+    return Array.from(map.values())
+  }
+
+  const handleExportLogs = () => {
+    if (!isPremium) return
+    if (!logs.length) {
+      setActionMessage(language === 'en' ? 'No brew data to export yet.' : '暂无可导出的冲煮数据。')
+      return
+    }
+    try {
+      exportBrewLogsExcel(logs, language)
+      setActionMessage(language === 'en' ? `Exported ${logs.length} brew logs.` : `已导出 ${logs.length} 条冲煮记录。`)
+    } catch {
+      setActionMessage(language === 'en' ? 'Export failed. Please try again.' : '导出失败，请重试。')
+    }
+  }
+
+  const handleExportTemplates = () => {
+    if (!isPremium) return
+    const total = beans.length + equipment.length + recipes.length
+    if (!total) {
+      setActionMessage(language === 'en' ? 'No template data to export yet.' : '暂无可导出的模板数据。')
+      return
+    }
+    try {
+      exportTemplateExcel({ beans, equipment, recipes }, language)
+      setActionMessage(
+        language === 'en'
+          ? `Exported templates: ${beans.length} beans, ${equipment.length} equipment, ${recipes.length} recipes`
+          : `已导出模板数据：豆子 ${beans.length} 条，设备 ${equipment.length} 条，配方 ${recipes.length} 条`
+      )
+    } catch {
+      setActionMessage(language === 'en' ? 'Export failed. Please try again.' : '导出失败，请重试。')
+    }
+  }
+
+  const handlePickImport = () => {
+    if (!isPremium) return
+    fileInputRef.current?.click()
+  }
+
+  const handleImportTemplates = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const parsed = await importTemplateExcel(file)
+      setBeans((prev) => mergeById(prev, parsed.beans))
+      setEquipment((prev) => mergeById(prev, parsed.equipment))
+      setRecipes((prev) => mergeById(prev, parsed.recipes))
+      setActionMessage(
+        language === 'en'
+          ? `Imported: ${parsed.beans.length} beans, ${parsed.equipment.length} equipment, ${parsed.recipes.length} recipes`
+          : `导入完成：豆子 ${parsed.beans.length} 条，设备 ${parsed.equipment.length} 条，配方 ${parsed.recipes.length} 条`
+      )
+    } catch {
+      setActionMessage(language === 'en' ? 'Import failed. Please check file format.' : '导入失败，请检查 Excel 文件格式')
+    }
+  }
 
   return (
     <div className="p-4 pb-[calc(env(safe-area-inset-bottom,0px)+7rem)]">
@@ -87,6 +173,51 @@ export default function SubscriptionPage() {
 
       {isPremium && (
         <>
+          <section className="card mb-4">
+            <h3 className="font-semibold text-coffee-800 mb-2">
+              {language === 'en' ? 'Pro Data Center (Excel)' : '高级版数据中心（Excel）'}
+            </h3>
+            <p className="text-sm text-stone-600 mb-3">
+              {language === 'en'
+                ? 'Export brew logs for analysis, or import/export template library in one click.'
+                : '支持导出冲煮记录做分析，或一键导入/导出豆子库、设备库、饮品配方。'}
+            </p>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={handleExportLogs}
+                className="btn-secondary w-full flex items-center justify-center gap-2"
+              >
+                <FileArrowDown size={18} />
+                {language === 'en' ? 'Export Brew Data (.xlsx)' : '导出冲煮数据（Excel）'}
+              </button>
+              <button
+                type="button"
+                onClick={handleExportTemplates}
+                className="btn-secondary w-full flex items-center justify-center gap-2"
+              >
+                <FileArrowDown size={18} />
+                {language === 'en' ? 'Export Template Data (.xlsx)' : '导出模板数据（Excel）'}
+              </button>
+              <button
+                type="button"
+                onClick={handlePickImport}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+              >
+                <FileArrowUp size={18} />
+                {language === 'en' ? 'Import Template Data (.xlsx)' : '导入模板数据（Excel）'}
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={handleImportTemplates}
+            />
+            {actionMessage && <p className="text-xs text-stone-500 mt-2">{actionMessage}</p>}
+          </section>
+
           <section className="card mb-4">
             <h3 className="font-semibold text-coffee-800 mb-2 flex items-center gap-2">
               <Lightning size={18} weight="duotone" />

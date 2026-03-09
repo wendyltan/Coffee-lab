@@ -5,14 +5,34 @@ import { ROAST_LEVELS } from '../../lib/constants'
 import { getRoastIcon, DEFAULT_ICON_SIZE } from '../../lib/iconMap'
 import { getProductionAgeText, getBeanAgeSnapshot, getBestWindowDaysForRoast } from '../../lib/utils'
 
+function getTodayDateInputValue() {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  const d = String(now.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export default function BeanList({ items }) {
   const { addBean, updateBean, deleteBean, language, beanFreshnessSettings } = useApp()
   const [editingId, setEditingId] = useState(null)
   const [isAdding, setIsAdding] = useState(false)
-  const [form, setForm] = useState({ name: '', origin: '', roast: 'medium', productionDate: '' })
+  const [form, setForm] = useState({
+    name: '',
+    origin: '',
+    flavorNotes: '',
+    roast: 'medium',
+    productionDate: getTodayDateInputValue(),
+  })
 
   const openAdd = () => {
-    setForm({ name: '', origin: '', roast: 'medium', productionDate: '' })
+    setForm({
+      name: '',
+      origin: '',
+      flavorNotes: '',
+      roast: 'medium',
+      productionDate: getTodayDateInputValue(),
+    })
     setIsAdding(true)
     setEditingId(null)
   }
@@ -21,6 +41,7 @@ export default function BeanList({ items }) {
     setForm({
       name: bean.name ?? '',
       origin: bean.origin ?? '',
+      flavorNotes: bean.flavorNotes ?? '',
       roast: bean.roast ?? 'medium',
       productionDate: bean.productionDate ?? '',
     })
@@ -36,18 +57,32 @@ export default function BeanList({ items }) {
       addBean(form)
       setIsAdding(false)
     }
-    setForm({ name: '', origin: '', roast: 'medium', productionDate: '' })
+    setForm({
+      name: '',
+      origin: '',
+      flavorNotes: '',
+      roast: 'medium',
+      productionDate: getTodayDateInputValue(),
+    })
   }
 
   const cancel = () => {
     setEditingId(null)
     setIsAdding(false)
-    setForm({ name: '', origin: '', roast: 'medium', productionDate: '' })
+    setForm({
+      name: '',
+      origin: '',
+      flavorNotes: '',
+      roast: 'medium',
+      productionDate: getTodayDateInputValue(),
+    })
   }
   const roastLabel = (value) => {
     const map = {
       light: language === 'en' ? 'Light' : '浅烘',
+      medium_light: language === 'en' ? 'Medium-Light' : '中浅烘',
       medium: language === 'en' ? 'Medium' : '中烘',
+      medium_dark: language === 'en' ? 'Medium-Dark' : '中深烘',
       dark: language === 'en' ? 'Dark' : '深烘',
     }
     return map[value] ?? value
@@ -86,7 +121,7 @@ export default function BeanList({ items }) {
       </div>
 
       {(isAdding || editingId) && (
-        <div className="card space-y-3">
+        <div className="card space-y-3 overflow-hidden">
           <input
             type="text"
             className="input-field"
@@ -101,11 +136,18 @@ export default function BeanList({ items }) {
             value={form.origin}
             onChange={(e) => setForm((f) => ({ ...f, origin: e.target.value }))}
           />
+          <input
+            type="text"
+            className="input-field"
+            placeholder={language === 'en' ? 'Flavor notes (optional)' : '风味信息（可选）'}
+            value={form.flavorNotes}
+            onChange={(e) => setForm((f) => ({ ...f, flavorNotes: e.target.value }))}
+          />
           <div>
             <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Production date (optional)' : '生产日期（可选）'}</label>
             <input
               type="date"
-              className="input-field"
+              className="input-field date-input-compact min-w-0 w-full max-w-full text-sm"
               value={form.productionDate}
               onChange={(e) => setForm((f) => ({ ...f, productionDate: e.target.value }))}
             />
@@ -157,6 +199,11 @@ export default function BeanList({ items }) {
                   <p className="text-sm text-stone-500">
                     {bean.origin} · {roastLabel(bean.roast)}
                   </p>
+                  {bean.flavorNotes && (
+                    <p className="text-xs text-coffee-600 mt-0.5">
+                      {language === 'en' ? `Flavor: ${bean.flavorNotes}` : `风味：${bean.flavorNotes}`}
+                    </p>
+                  )}
                   {getProductionAgeText(bean.productionDate) && (
                     <p className="text-xs text-stone-400 mt-0.5">
                       {language === 'en' ? `Age ${getProductionAgeText(bean.productionDate)}` : `已生产${getProductionAgeText(bean.productionDate)}`}

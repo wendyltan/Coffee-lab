@@ -98,6 +98,7 @@ function EquipmentCombobox({
 const defaultForm = {
   beanName: '',
   beanOrigin: '',
+  beanFlavor: '',
   roast: 'medium',
   beanProductionDate: '',
   equipmentDisplay: '',
@@ -138,6 +139,7 @@ export default function LoggerForm() {
       setForm({
         beanName: existingLog.beanName ?? '',
         beanOrigin: existingLog.beanOrigin ?? '',
+        beanFlavor: existingLog.beanFlavor ?? '',
         roast: existingLog.roast ?? 'medium',
         beanProductionDate: existingLog.beanProductionDate ?? '',
         equipmentDisplay: existingLog.equipmentDisplay ?? '',
@@ -165,7 +167,9 @@ export default function LoggerForm() {
   const getRoastText = (value) => {
     const map = {
       light: t('roast.light', '浅烘'),
+      medium_light: t('roast.medium_light', '中浅烘'),
       medium: t('roast.medium', '中烘'),
+      medium_dark: t('roast.medium_dark', '中深烘'),
       dark: t('roast.dark', '深烘'),
     }
     return map[value] ?? value
@@ -188,6 +192,7 @@ export default function LoggerForm() {
     if (!bean) return
     update('beanName', bean.name ?? '')
     update('beanOrigin', bean.origin ?? '')
+    update('beanFlavor', bean.flavorNotes ?? '')
     update('roast', bean.roast ?? 'medium')
     update('beanProductionDate', bean.productionDate ?? '')
   }
@@ -245,6 +250,7 @@ export default function LoggerForm() {
     const payload = {
       beanName: form.beanName,
       beanOrigin: form.beanOrigin,
+      beanFlavor: form.beanFlavor,
       roast: form.roast,
       beanProductionDate: form.beanProductionDate || undefined,
       beanAgeDaysAtLog: keepExistingBeanAgeSnapshot
@@ -336,6 +342,16 @@ export default function LoggerForm() {
               placeholder={language === 'en' ? 'e.g. Ethiopia' : '如：埃塞俄比亚'}
             />
           </div>
+        </div>
+        <div className="mt-3">
+          <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Flavor notes' : '风味信息'}</label>
+          <input
+            type="text"
+            className="input-field"
+            value={form.beanFlavor}
+            onChange={(e) => update('beanFlavor', e.target.value)}
+            placeholder={language === 'en' ? 'e.g. citrus, caramel, floral' : '如：柑橘、焦糖、花香'}
+          />
         </div>
         <div className="mt-3">
           <label className="block text-sm text-stone-500 mb-1">{language === 'en' ? 'Roast' : '烘焙度'}</label>

@@ -35,7 +35,9 @@ export default function CompareView({ left, right }) {
   const roastLabel = (v) => {
     const map = {
       light: t('roast.light', '浅烘'),
+      medium_light: t('roast.medium_light', '中浅烘'),
       medium: t('roast.medium', '中烘'),
+      medium_dark: t('roast.medium_dark', '中深烘'),
       dark: t('roast.dark', '深烘'),
     }
     return map[v] ?? getRoastLabel(v)
@@ -73,6 +75,7 @@ export default function CompareView({ left, right }) {
   const fields = [
     { key: 'beanName', label: t('compare.bean', '豆子') },
     { key: 'beanOrigin', label: t('compare.origin', '产地') },
+    { key: 'beanFlavor', label: t('compare.flavor', '风味信息') },
     { key: 'roast', label: t('compare.roast', '烘焙度'), format: roastLabel },
     { key: 'beanProductionDate', label: t('compare.beanAge', '豆子生产时长'), formatRecord: formatBeanAgeAtLog },
     { key: 'equipmentDisplay', label: t('compare.equipment', '使用设备') },

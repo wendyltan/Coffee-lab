@@ -6,6 +6,8 @@ import {
   Sun,
   CircleHalf,
   Moon,
+  CloudSun,
+  CloudMoon,
   Coffee,
   Flame,
   Drop,
@@ -21,7 +23,9 @@ import {
 
 const ROAST_ICONS = {
   light: Sun,
+  medium_light: CloudSun,
   medium: CircleHalf,
+  medium_dark: CloudMoon,
   dark: Moon,
 }
 

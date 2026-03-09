@@ -18,7 +18,9 @@ function getMethodLabel(v, t) {
 function getRoastLabel(v, t) {
   const map = {
     light: t('roast.light', '浅烘'),
+    medium_light: t('roast.medium_light', '中浅烘'),
     medium: t('roast.medium', '中烘'),
+    medium_dark: t('roast.medium_dark', '中深烘'),
     dark: t('roast.dark', '深烘'),
   }
   return map[v] ?? v

@@ -56,7 +56,11 @@ export function getBestWindowDaysForRoast(roast, settings) {
   const source = settings && typeof settings === 'object'
     ? settings
     : DEFAULT_BEAN_BEST_WINDOW_WEEKS
-  const weeks = Number(source[roast])
+  const fallbackByRoast = {
+    medium_light: source.medium_light ?? source.light ?? source.medium,
+    medium_dark: source.medium_dark ?? source.dark ?? source.medium,
+  }
+  const weeks = Number(source[roast] ?? fallbackByRoast[roast])
   if (!Number.isFinite(weeks)) return BEST_TASTE_WINDOW_DAYS
   return Math.max(1, Math.round(weeks)) * 7
 }
