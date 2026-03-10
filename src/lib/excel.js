@@ -1,5 +1,3 @@
-import * as XLSX from 'xlsx'
-
 function ts() {
   return new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')
 }
@@ -37,7 +35,13 @@ function normalizeId(value) {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export function exportBrewLogsExcel(logs = [], language = 'zh-Hans') {
+async function getXLSX() {
+  const mod = await import('xlsx')
+  return mod.default ?? mod
+}
+
+export async function exportBrewLogsExcel(logs = [], language = 'zh-Hans') {
+  const XLSX = await getXLSX()
   const rows = logs.map((log) => ({
     id: log.id ?? '',
     date: log.date ?? '',
@@ -65,10 +69,11 @@ export function exportBrewLogsExcel(logs = [], language = 'zh-Hans') {
   const ws = XLSX.utils.json_to_sheet(rows)
   XLSX.utils.book_append_sheet(wb, ws, 'BrewLogs')
   const filename = language === 'en' ? `CoffeeLab-BrewLogs-${ts()}.xlsx` : `咖方-冲煮记录-${ts()}.xlsx`
-  XLSX.writeFile(wb, filename)
+  return writeWorkbook(wb, filename, language === 'en' ? 'Brew logs export' : '冲煮记录导出')
 }
 
-export function exportTemplateExcel({ beans = [], equipment = [], recipes = [] }, language = 'zh-Hans') {
+export async function exportTemplateExcel({ beans = [], equipment = [], recipes = [] }, language = 'zh-Hans') {
+  const XLSX = await getXLSX()
   const wb = XLSX.utils.book_new()
   const beanRows = beans.map((b) => ({
     id: b.id ?? '',
@@ -98,10 +103,11 @@ export function exportTemplateExcel({ beans = [], equipment = [], recipes = [] }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(recipeRows), 'Recipes')
 
   const filename = language === 'en' ? `CoffeeLab-Templates-${ts()}.xlsx` : `咖方-模板数据-${ts()}.xlsx`
-  XLSX.writeFile(wb, filename)
+  return writeWorkbook(wb, filename, language === 'en' ? 'Template export' : '模板数据导出')
 }
 
 export async function importTemplateExcel(file) {
+  const XLSX = await getXLSX()
   const data = await file.arrayBuffer()
   const wb = XLSX.read(data)
 
@@ -148,4 +154,52 @@ export async function importTemplateExcel(file) {
   })).filter((row) => row.name)
 
   return { beans, equipment, recipes }
+}
+
+async function isNativePlatform() {
+  try {
+    const mod = await import('@capacitor/core')
+    return Boolean(mod?.Capacitor?.isNativePlatform?.())
+  } catch {
+    return false
+  }
+}
+
+async function writeWorkbook(workbook, filename, shareTitle) {
+  const XLSX = await getXLSX()
+  const native = await isNativePlatform()
+  if (!native) {
+    XLSX.writeFile(workbook, filename)
+    return { mode: 'download' }
+  }
+  const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+    import('@capacitor/filesystem'),
+    import('@capacitor/share'),
+  ])
+  const base64 = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' })
+  const tempPath = `coffeelab-export/${filename}`
+  const writeResult = await Filesystem.writeFile({
+    path: tempPath,
+    data: base64,
+    directory: Directory.Cache,
+    recursive: true,
+  })
+  try {
+    await Share.share({
+      title: shareTitle,
+      url: writeResult.uri,
+      dialogTitle: shareTitle,
+    })
+    return { mode: 'share', uri: writeResult.uri }
+  } finally {
+    // Keep only the user-selected saved file, remove app-side temp export.
+    try {
+      await Filesystem.deleteFile({
+        path: tempPath,
+        directory: Directory.Cache,
+      })
+    } catch {
+      // ignore cleanup error
+    }
+  }
 }

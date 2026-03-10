@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { House, Heart, SquaresFour, ChartBar, GearSix } from '@phosphor-icons/react'
-import HomePage from './pages/HomePage'
-import DayPage from './pages/DayPage'
-import LogPage from './pages/LogPage'
-import FavoritesPage from './pages/FavoritesPage'
-import TemplatesPage from './pages/TemplatesPage'
-import StatsPage from './pages/StatsPage'
-import ComparePage from './pages/ComparePage'
-import SettingsPage from './pages/SettingsPage'
-import SubscriptionPage from './pages/SubscriptionPage'
 import Layout from './components/Layout'
 import { useApp } from './context/AppContext'
 import { triggerHaptic } from './lib/haptics'
+
+const HomePage = lazy(() => import('./pages/HomePage'))
+const DayPage = lazy(() => import('./pages/DayPage'))
+const LogPage = lazy(() => import('./pages/LogPage'))
+const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
+const TemplatesPage = lazy(() => import('./pages/TemplatesPage'))
+const StatsPage = lazy(() => import('./pages/StatsPage'))
+const ComparePage = lazy(() => import('./pages/ComparePage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const SubscriptionPage = lazy(() => import('./pages/SubscriptionPage'))
 
 export default function App() {
   const location = useLocation()
@@ -101,18 +102,26 @@ export default function App() {
   return (
     <div className="h-[100dvh] bg-cream-200 overflow-hidden flex flex-col">
       <Layout showNav={!isCompare}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/day/:date" element={<DayPage />} />
-          <Route path="/favorites" element={<FavoritesPage />} />
-          <Route path="/log" element={<LogPage />} />
-          <Route path="/log/:id" element={<LogPage />} />
-          <Route path="/templates" element={<TemplatesPage />} />
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/compare" element={<ComparePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/subscription" element={<SubscriptionPage />} />
-        </Routes>
+        <Suspense
+          fallback={
+            <div className="p-6 text-center text-stone-500">
+              {language === 'en' ? 'Loading...' : '加载中...'}
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/day/:date" element={<DayPage />} />
+            <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/log" element={<LogPage />} />
+            <Route path="/log/:id" element={<LogPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/compare" element={<ComparePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
+          </Routes>
+        </Suspense>
       </Layout>
 
       {!isCompare && !isKeyboardOpen && (

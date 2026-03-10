@@ -67,21 +67,25 @@ export default function SubscriptionPage() {
     return Array.from(map.values())
   }
 
-  const handleExportLogs = () => {
+  const handleExportLogs = async () => {
     if (!isPremium) return
     if (!logs.length) {
       setActionMessage(language === 'en' ? 'No brew data to export yet.' : '暂无可导出的冲煮数据。')
       return
     }
     try {
-      exportBrewLogsExcel(logs, language)
-      setActionMessage(language === 'en' ? `Exported ${logs.length} brew logs.` : `已导出 ${logs.length} 条冲煮记录。`)
+      const result = await exportBrewLogsExcel(logs, language)
+      setActionMessage(
+        result.mode === 'share'
+          ? (language === 'en' ? 'Export ready. Choose "Save to Files" in share sheet.' : '导出已就绪，请在系统分享面板选择“存储到文件”。')
+          : (language === 'en' ? `Exported ${logs.length} brew logs.` : `已导出 ${logs.length} 条冲煮记录。`)
+      )
     } catch {
       setActionMessage(language === 'en' ? 'Export failed. Please try again.' : '导出失败，请重试。')
     }
   }
 
-  const handleExportTemplates = () => {
+  const handleExportTemplates = async () => {
     if (!isPremium) return
     const total = beans.length + equipment.length + recipes.length
     if (!total) {
@@ -89,11 +93,15 @@ export default function SubscriptionPage() {
       return
     }
     try {
-      exportTemplateExcel({ beans, equipment, recipes }, language)
+      const result = await exportTemplateExcel({ beans, equipment, recipes }, language)
       setActionMessage(
-        language === 'en'
-          ? `Exported templates: ${beans.length} beans, ${equipment.length} equipment, ${recipes.length} recipes`
-          : `已导出模板数据：豆子 ${beans.length} 条，设备 ${equipment.length} 条，配方 ${recipes.length} 条`
+        result.mode === 'share'
+          ? (language === 'en'
+              ? 'Export ready. Choose "Save to Files" in share sheet.'
+              : '导出已就绪，请在系统分享面板选择“存储到文件”。')
+          : (language === 'en'
+              ? `Exported templates: ${beans.length} beans, ${equipment.length} equipment, ${recipes.length} recipes`
+              : `已导出模板数据：豆子 ${beans.length} 条，设备 ${equipment.length} 条，配方 ${recipes.length} 条`)
       )
     } catch {
       setActionMessage(language === 'en' ? 'Export failed. Please try again.' : '导出失败，请重试。')

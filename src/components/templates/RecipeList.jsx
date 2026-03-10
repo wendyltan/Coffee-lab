@@ -35,9 +35,21 @@ export default function RecipeList({ items }) {
     setShowBuilder(false)
   }
 
+  const iceLabel = (fraction) => {
+    if (language === 'en') {
+      return fraction >= 1 ? 'full cup' : fraction >= 0.9 ? '90%' : fraction >= 0.8 ? '80%' : '70%'
+    }
+    return fraction >= 1 ? '满杯' : fraction >= 0.9 ? '九分满' : fraction >= 0.8 ? '八分满' : '七分满'
+  }
+
+  const formatIngredientText = (i) => {
+    if (i?.isIce) return `${i.name}${iceLabel(i.fraction ?? 0.7)}`
+    return `${i.name}${i.ml}ml`
+  }
+
   const save = () => {
     const detail = form.ingredients.length
-      ? form.ingredients.map((i) => `${i.name}${i.ml}ml`).join(' + ')
+      ? form.ingredients.map((i) => formatIngredientText(i)).join(' + ')
       : ''
     const thumbnail = form.ingredients.length > 0 ? drawRecipeThumbnail(form.ingredients) : null
     const payload = {
@@ -69,17 +81,7 @@ export default function RecipeList({ items }) {
   const ingredientsSummary = (r) => {
     if (r.ingredients?.length) {
       return r.ingredients
-        .map((i) => {
-          if (i.isIce) {
-            const frac = i.fraction ?? 0.7
-            const label =
-                language === 'en'
-                  ? frac >= 1 ? 'full cup' : frac >= 0.9 ? '90%' : frac >= 0.8 ? '80%' : '70%'
-                  : frac >= 1 ? '满杯' : frac >= 0.9 ? '九分满' : frac >= 0.8 ? '八分满' : '七分满'
-            return `${i.name}${label}`
-          }
-          return `${i.name}${i.ml}ml`
-        })
+        .map((i) => formatIngredientText(i))
         .join(' + ')
     }
     return r.detail || (language === 'en' ? '-' : '—')
@@ -144,7 +146,8 @@ export default function RecipeList({ items }) {
             </button>
             {form.ingredients.length > 0 && (
               <p className="text-sm text-stone-500 mt-2">
-                {language === 'en' ? 'Added: ' : '已添加：'}{form.ingredients.map((i) => `${i.name}${i.ml}ml`).join(' + ')}
+                {language === 'en' ? 'Added: ' : '已添加：'}
+                {form.ingredients.map((i) => formatIngredientText(i)).join(' + ')}
               </p>
             )}
           </div>
